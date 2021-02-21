@@ -1,0 +1,118 @@
+---
+title: "Quadratic Approximation: A Simple Example"
+author: "Adam True Bendorf"
+date: "2/21/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+```
+
+## Summary
+
+In this script, I will derive the quadratic approximation of the posterior density in a simple example.  In this example, it is possible to derive an exact formula for the posterior density, which will allow us to see how close the the quadratic approximation is to the correct answer.
+
+The example is essentially McElreath's globe-tossing example from *Statistical Rethinking*.  Let $Y$ be the number of times our globe lands on water in $n$ tosses.  We model $Y$ as a Binom$(n, q)$ random variable.  We don't know $q$, so we will start with a prior for $q$ and perform Bayesian updates after observing the value of $Y$.  
+
+The prior I will use will be a Beta distribution with parameters $a$ and $b$.  This is a standard prior for the probability parameter of a Binomial distribution, for several reasons.  First, Beta distributed random variables take on values between 0 and 1, which makes the Beta a natural choice when modeling probabilities.  Also, the Beta distribution is the so-called "conjugate prior" for the binomial, which means that if one uses a Beta prior for $q$, the posterior distribution will also be Beta after updating on the value of $Y$.  Additionally, there is a simple formula for the parameters of the posterior distribution.  If your prior for $q$ is Beta$(a,b)$ and you land on water $Y$ times in $n$ tosses, then your posterior distribution for $q$ is Beta$(a + Y, b + N - Y)$.[^1]  This fact will allow us to calculate the correct posterior density at each point, which will allow us to see exactly how accurate the quadratic approximation to the posterior density is.
+
+
+I will start by fixing some values for $a$, $b$, $Y$, and $n$. 
+
+```{r, echo=TRUE}
+# a and b parameters for the beta prior
+prior_a <- 3
+prior_b <- 5
+
+# number of tosses of the globe 
+n <- 30
+
+# number of times the globe lands on water
+Y <- 29
+```
+
+Our prior density looks like this:
+
+```{r}
+x_vals <- seq(from=0, to=1, by=0.01)
+prior_y <- dbeta(x_vals, prior_a, prior_b)
+df_prior <- data.frame(x=x_vals, y=prior_y)
+ggplot(df_prior, aes(x=x,y=y)) + geom_line()
+```
+
+
+Let's also compute the correct parameters for the posterior Beta distribution (using the formulas mentioned above).
+
+```{r, echo=TRUE}
+posterior_a <- prior_a + Y
+posterior_b <- prior_b + n - Y
+posterior_y <- dbeta(x_vals, posterior_a, posterior_b)
+df_posterior <- data.frame(x=x_vals, prior=prior_y, posterior=posterior_y)
+df_posterior <- df_posterior %>% pivot_longer(c(prior,posterior))
+
+print("posterior_a")
+print("posterior_b")
+
+ggplot(df_posterior, aes(x=x, y=value, color=name)) + geom_line()
+```
+
+
+
+[^1]: See the start of the following lecture for a proof: https://www.youtube.com/watch?v=UZjlBQbV1KU
+
+## User-Defined Parameters
+
+
+## Overview of the Math Behind the Quadratic Approximation
+
+The math behind quadratic approximation is outlined in *Bayesian Data Analysis*, 3rd edition.  I will quickly review that material here.
+
+The setup for quadratic approximation is that we would like to approximate log$(p(q|Y))$, where $p(q|Y)$ is the posterior density discussed earlier.  The basic idea behind quadratic approximation is that we will find the *posterior mode*---that is, the point $\hat{q}$ where the posterior density achieves its maximum---and then approximate the log posterior density near that point using a second-order Taylor expansion.  The Taylor expansion is $$log(p(q|Y)) \approx log(\hat{q}|Y) + \frac{\partial \log (p(q|Y))}{\partial q}\vert_{q = \hat{q}}(q - \hat{q}) + \frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}\frac{(q-\hat{q})^2}{2}$$
+Now, because the first derivative of $log(p(q|Y))$ will be zero at the posterior mode, we can simplify this to read
+$$log(p(q|Y)) \approx log(\hat{q}|Y) + \frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}\frac{(q-\hat{q})^2}{2}$$
+If we exponentiate both sides of the above formula, we get that 
+$$p(q | Y) \approx e^{log(p(\hat{q}|Y))}e^{\frac{-1}{2}\frac{(q- \hat{q})^2}{\frac{-1}{\frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}}}}$$
+The first multiplicand in this formula is a constant, and the second we may recognize as the density of a normal random variable with mean $\hat{q}$ and variance $\frac{-1}{\frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}}$.  
+
+To summarize, if we can find the posterior mode and the second derivative of the log posterior density, then the normal distribution should provide a good approximation to the true posterior density near the posterior mode.  
+
+## Application: The Globe-Tossing Example
+
+In the globe-tossing example, applying Bayes's theorem gives us
+$$p(q | Y) = \frac{p(Y | q)p(q)}{\int p(Y|q)p(q)}$$.  Plugging in the binomial probability mass function and the beta density and ignoring constants (such as the denominator of the above fraction), we get that
+$$p(q|Y) \approx q^Y(1-q)^{N-Y}q^{a-1}(1-q)^{b-1} = q^{Y+a-1}(1-q)^{N-y+b-1}$$.  
+
+Let's go ahead and define a function to calculate the value for any given q and then ask R to maximize it to find the posterior mode.
+```{r, echo=TRUE}
+likelihood_func <- function(q)
+{
+  return(q^(posterior_a)*(1-q)^(posterior_b))
+}
+opt_obj <- optimize(likelihood_func, c(0,1), maximum=TRUE)
+post_mode <- opt_obj$maximum
+print("posterior mode:")
+print(post_mode)
+```
+
+Next, we need to calculate the second derivative of the log posterior with respect to $q$.  The calculation isn't particularly hard or interesting, so I'll just give you the answer:
+
+$$\frac{\partial^2}{\partial q^2}log(p(q|Y)) = -\frac{y+a-1}{q^2} - \frac{N-y+b-1}{(1-q)^2}$$.  Thus, the variance we need is 
+Evaluating that at the posterior mode, we get
+```{r, echo=TRUE}
+norm_approx_var <- -1/( -(posterior_a)/post_mode^2 - (posterior_b)/(1-post_mode)^2)
+```
+
+And the standard deviation is
+```{r}
+norm_std <- sqrt(norm_approx_var)
+```
+
+```{r}
+norm_approx_y <- dnorm(x_vals, post_mode, norm_std)
+df_norm_approx <- data.frame(x=x_vals, norm_approx=norm_approx_y, posterior=posterior_y)
+df_norm_approx <- df_norm_approx %>% pivot_longer(c(norm_approx,posterior))
+ggplot(df_norm_approx, aes(x=x, y=value, color=name)) + geom_line()
+```
+
