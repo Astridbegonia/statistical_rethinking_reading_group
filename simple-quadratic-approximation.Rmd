@@ -1,6 +1,5 @@
 ---
 title: "Quadratic Approximation: A Simple Example"
-author: "Adam True Bendorf"
 date: "2/21/2021"
 output: pdf_document
 ---
@@ -36,7 +35,7 @@ Y <- 29
 Our prior density looks like this:
 
 ```{r}
-x_vals <- seq(from=0, to=1, by=0.01)
+x_vals <- seq(from=0, to=1, by=0.001)
 prior_y <- dbeta(x_vals, prior_a, prior_b)
 df_prior <- data.frame(x=x_vals, y=prior_y)
 ggplot(df_prior, aes(x=x,y=y)) + geom_line()
@@ -61,9 +60,6 @@ ggplot(df_posterior, aes(x=x, y=value, color=name)) + geom_line()
 
 
 [^1]: See the start of the following lecture for a proof: https://www.youtube.com/watch?v=UZjlBQbV1KU
-
-## User-Defined Parameters
-
 
 ## Overview of the Math Behind the Quadratic Approximation
 
@@ -101,7 +97,7 @@ Next, we need to calculate the second derivative of the log posterior with respe
 $$\frac{\partial^2}{\partial q^2}log(p(q|Y)) = -\frac{y+a-1}{q^2} - \frac{N-y+b-1}{(1-q)^2}$$  
 Evaluating that at the posterior mode, we get
 ```{r, echo=TRUE}
-norm_approx_var <- -1/( -(posterior_a)/post_mode^2 - (posterior_b)/(1-post_mode)^2)
+norm_approx_var <- -1/( -(posterior_a-1)/post_mode^2 - (posterior_b-1)/(1-post_mode)^2)
 ```
 
 And the standard deviation is therefore
