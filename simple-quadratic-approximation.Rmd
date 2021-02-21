@@ -67,7 +67,7 @@ ggplot(df_posterior, aes(x=x, y=value, color=name)) + geom_line()
 
 ## Overview of the Math Behind the Quadratic Approximation
 
-The math behind quadratic approximation is outlined in *Bayesian Data Analysis*, 3rd edition.  I will quickly review that material here.
+The math behind quadratic approximation is outlined in chapter 4 of *Bayesian Data Analysis*, 3rd edition.  I will quickly review that material here.
 
 The setup for quadratic approximation is that we would like to approximate log$(p(q|Y))$, where $p(q|Y)$ is the posterior density discussed earlier.  The basic idea behind quadratic approximation is that we will find the *posterior mode*---that is, the point $\hat{q}$ where the posterior density achieves its maximum---and then approximate the log posterior density near that point using a second-order Taylor expansion.  The Taylor expansion is $$log(p(q|Y)) \approx log(\hat{q}|Y) + \frac{\partial \log (p(q|Y))}{\partial q}\vert_{q = \hat{q}}(q - \hat{q}) + \frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}\frac{(q-\hat{q})^2}{2}$$
 Now, because the first derivative of $log(p(q|Y))$ will be zero at the posterior mode, we can simplify this to read
@@ -76,15 +76,15 @@ If we exponentiate both sides of the above formula, we get that
 $$p(q | Y) \approx e^{log(p(\hat{q}|Y))}e^{\frac{-1}{2}\frac{(q- \hat{q})^2}{\frac{-1}{\frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}}}}$$
 The first multiplicand in this formula is a constant, and the second we may recognize as the density of a normal random variable with mean $\hat{q}$ and variance $\frac{-1}{\frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}}$.  
 
-To summarize, if we can find the posterior mode and the second derivative of the log posterior density, then the normal distribution should provide a good approximation to the true posterior density near the posterior mode.  
+To summarize, if we can find the posterior mode and the second derivative of the log posterior density, then we can use those values to construct a normal approximation to the true posterior density near the posterior mode.  
 
 ## Application: The Globe-Tossing Example
 
 In the globe-tossing example, applying Bayes's theorem gives us
-$$p(q | Y) = \frac{p(Y | q)p(q)}{\int p(Y|q)p(q)}$$.  Plugging in the binomial probability mass function and the beta density and ignoring constants (such as the denominator of the above fraction), we get that
+$$p(q | Y) = \frac{p(Y | q)p(q)}{\int p(Y|q)p(q)}$$  Plugging in the binomial probability mass function and the beta density and ignoring constants (such as the denominator of the above fraction), we get that
 $$p(q|Y) \approx q^Y(1-q)^{N-Y}q^{a-1}(1-q)^{b-1} = q^{Y+a-1}(1-q)^{N-y+b-1}$$.  
 
-Let's go ahead and define a function to calculate the value for any given q and then ask R to maximize it to find the posterior mode.
+Let's go ahead and define a function to calculate the value for any given $q$ and then ask R to maximize it to find the posterior mode.  (Note that we're using here the fact that if $f(x)$ is maximized at $x$, then $c f(x)$ will also be maximized at $x$ if $c$ is a positive constant.)
 ```{r, echo=TRUE}
 likelihood_func <- function(q)
 {
@@ -96,18 +96,20 @@ print("posterior mode:")
 print(post_mode)
 ```
 
-Next, we need to calculate the second derivative of the log posterior with respect to $q$.  The calculation isn't particularly hard or interesting, so I'll just give you the answer:
+Next, we need to calculate the second derivative of the log posterior with respect to $q$.  The calculation isn't particularly hard or interesting (it just uses basic calculus), so I'll just give you the answer:
 
-$$\frac{\partial^2}{\partial q^2}log(p(q|Y)) = -\frac{y+a-1}{q^2} - \frac{N-y+b-1}{(1-q)^2}$$.  Thus, the variance we need is 
+$$\frac{\partial^2}{\partial q^2}log(p(q|Y)) = -\frac{y+a-1}{q^2} - \frac{N-y+b-1}{(1-q)^2}$$  
 Evaluating that at the posterior mode, we get
 ```{r, echo=TRUE}
 norm_approx_var <- -1/( -(posterior_a)/post_mode^2 - (posterior_b)/(1-post_mode)^2)
 ```
 
-And the standard deviation is
-```{r}
+And the standard deviation is therefore
+```{r, echo=TRUE}
 norm_std <- sqrt(norm_approx_var)
 ```
+
+Putting this all together, I will now plot both the true posterior and the quadratic approximation in the same graph so that we can see how they compare.
 
 ```{r}
 norm_approx_y <- dnorm(x_vals, post_mode, norm_std)
