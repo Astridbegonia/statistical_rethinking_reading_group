@@ -22,14 +22,14 @@ I will start by fixing some values for $a$, $b$, $Y$, and $n$.
 
 ```{r, echo=TRUE}
 # a and b parameters for the beta prior
-prior_a <- 3
-prior_b <- 5
+prior_a <- 5
+prior_b <- 4
 
 # number of tosses of the globe 
-n <- 30
+n <- 7
 
 # number of times the globe lands on water
-Y <- 29
+Y <- 2
 ```
 
 Our prior density looks like this:
@@ -51,8 +51,8 @@ posterior_y <- dbeta(x_vals, posterior_a, posterior_b)
 df_posterior <- data.frame(x=x_vals, prior=prior_y, posterior=posterior_y)
 df_posterior <- df_posterior %>% pivot_longer(c(prior,posterior))
 
-print("posterior_a")
-print("posterior_b")
+print(posterior_a)
+print(posterior_b)
 
 ggplot(df_posterior, aes(x=x, y=value, color=name)) + geom_line()
 ```
