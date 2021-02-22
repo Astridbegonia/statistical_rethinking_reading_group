@@ -22,7 +22,7 @@ I will start by fixing some values for $a$, $b$, $Y$, and $n$.
 
 ```{r, echo=TRUE}
 # a and b parameters for the beta prior
-prior_a <- 5
+prior_a <- 8
 prior_b <- 4
 
 # number of tosses of the globe 
@@ -70,7 +70,9 @@ Now, because the first derivative of $log(p(q|Y))$ will be zero at the posterior
 $$log(p(q|Y)) \approx log(\hat{q}|Y) + \frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}\frac{(q-\hat{q})^2}{2}$$
 If we exponentiate both sides of the above formula, we get that 
 $$p(q | Y) \approx e^{log(p(\hat{q}|Y))}e^{\frac{-1}{2}\frac{(q- \hat{q})^2}{\frac{-1}{\frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}}}}$$
-The first multiplicand in this formula is a constant, and the second we may recognize as the density of a normal random variable with mean $\hat{q}$ and variance $\frac{-1}{\frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}}$.  
+The first multiplicand in this formula is a constant, and the second we may recognize as the density of a normal random variable with mean $\hat{q}$ and variance $\frac{-1}{\frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}}$.[^2] 
+
+[^2]: I'm using a trick here.  A lot of proofs in probability/stats work by ignoring constants and then pattern matching (recognizing that the formula you've run into matches the template for a standard distribution's density).  This is the same trick that Blitzstein uses to prove that the Beta distribution is the conjugate prior for the Binomial (in the lecture I link in the previous footnote).  Because we know that the posterior has to integrate to 1, we can back into the constant once we know what distribution we're dealing with.
 
 To summarize, if we can find the posterior mode and the second derivative of the log posterior density, then we can use those values to construct a normal approximation to the true posterior density near the posterior mode.  
 
@@ -84,7 +86,7 @@ Let's go ahead and define a function to calculate the value for any given $q$ an
 ```{r, echo=TRUE}
 likelihood_func <- function(q)
 {
-  return(q^(posterior_a)*(1-q)^(posterior_b))
+  return(q^(posterior_a-1)*(1-q)^(posterior_b-1))
 }
 opt_obj <- optimize(likelihood_func, c(0,1), maximum=TRUE)
 post_mode <- opt_obj$maximum
@@ -107,7 +109,7 @@ norm_std <- sqrt(norm_approx_var)
 
 Putting this all together, I will now plot both the true posterior and the quadratic approximation in the same graph so that we can see how they compare.
 
-```{r}
+```{r, echo=TRUE}
 norm_approx_y <- dnorm(x_vals, post_mode, norm_std)
 df_norm_approx <- data.frame(x=x_vals, norm_approx=norm_approx_y, posterior=posterior_y)
 df_norm_approx <- df_norm_approx %>% pivot_longer(c(norm_approx,posterior))
