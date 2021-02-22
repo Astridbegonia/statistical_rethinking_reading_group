@@ -79,8 +79,8 @@ To summarize, if we can find the posterior mode and the second derivative of the
 ## Application: The Globe-Tossing Example
 
 In the globe-tossing example, applying Bayes's theorem gives us
-$$p(q | Y) = \frac{p(Y | q)p(q)}{\int p(Y|q)p(q)}$$  Plugging in the binomial probability mass function and the beta density and ignoring constants (such as the denominator of the above fraction), we get that
-$$p(q|Y) \approx q^Y(1-q)^{N-Y}q^{a-1}(1-q)^{b-1} = q^{Y+a-1}(1-q)^{N-y+b-1}$$.  
+$$p(q | Y) = \frac{p(Y | q)p(q)}{\int p(Y|q)p(q)}$$  Plugging in the binomial probability mass function and the beta density and ignoring constants (such as the denominator of the above fraction), we get the following proportionality relation:
+$$p(q|Y) \sim q^Y(1-q)^{N-Y}q^{a-1}(1-q)^{b-1} = q^{Y+a-1}(1-q)^{N-y+b-1}$$.  
 
 Let's go ahead and define a function to calculate the value for any given $q$ and then ask R to maximize it to find the posterior mode.  (Note that we're using here the fact that if $f(x)$ is maximized at $x$, then $c f(x)$ will also be maximized at $x$ if $c$ is a positive constant.)
 ```{r, echo=TRUE}
