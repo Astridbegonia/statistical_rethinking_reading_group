@@ -22,14 +22,14 @@ I will start by fixing some values for $a$, $b$, $Y$, and $n$.
 
 ```{r, echo=TRUE}
 # a and b parameters for the beta prior
-prior_a <- 8
-prior_b <- 4
+prior_a <- 1
+prior_b <- 1
 
 # number of tosses of the globe 
-n <- 7
+n <- 30
 
 # number of times the globe lands on water
-Y <- 2
+Y <- 20
 ```
 
 Our prior density looks like this:
@@ -65,7 +65,7 @@ ggplot(df_posterior, aes(x=x, y=value, color=name)) + geom_line()
 
 The math behind quadratic approximation is outlined in chapter 4 of *Bayesian Data Analysis*, 3rd edition.  I will quickly review that material here.
 
-The setup for quadratic approximation is that we would like to approximate log$(p(q|Y))$, where $p(q|Y)$ is the posterior density discussed earlier.  The basic idea behind quadratic approximation is that we will find the *posterior mode*---that is, the point $\hat{q}$ where the posterior density achieves its maximum---and then approximate the log posterior density near that point using a second-order Taylor expansion.  The Taylor expansion is $$log(p(q|Y)) \approx log(\hat{q}|Y) + \frac{\partial \log (p(q|Y))}{\partial q}\vert_{q = \hat{q}}(q - \hat{q}) + \frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}\frac{(q-\hat{q})^2}{2}$$
+The setup for quadratic approximation is that we would like to approximate log$(p(q|Y))$, where $p(q|Y)$ is the posterior density discussed earlier.[^3] The basic idea behind quadratic approximation is that we will find the *posterior mode*---that is, the point $\hat{q}$ where the posterior density achieves its maximum---and then approximate the log posterior density near that point using a second-order Taylor expansion.  The Taylor expansion is $$log(p(q|Y)) \approx log(\hat{q}|Y) + \frac{\partial \log (p(q|Y))}{\partial q}\vert_{q = \hat{q}}(q - \hat{q}) + \frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}\frac{(q-\hat{q})^2}{2}$$
 Now, because the first derivative of $log(p(q|Y))$ will be zero at the posterior mode, we can simplify this to read
 $$log(p(q|Y)) \approx log(\hat{q}|Y) + \frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}\frac{(q-\hat{q})^2}{2}$$
 If we exponentiate both sides of the above formula, we get that 
@@ -73,6 +73,8 @@ $$p(q | Y) \approx e^{log(p(\hat{q}|Y))}e^{\frac{-1}{2}\frac{(q- \hat{q})^2}{\fr
 The first term in this formula ($e^{log(p(\hat{q}|Y))}$) is a constant, and the second we may recognize as the density of a normal random variable with mean $\hat{q}$ and variance $\frac{-1}{\frac{\partial^2 log(p(q|Y))}{\partial q^2}\vert_{q=\hat{q}}}$.[^2] 
 
 [^2]: I'm using a trick here.  A lot of proofs in probability/stats work by ignoring constants and then pattern matching (recognizing that the formula you've run into matches the template for a standard distribution's density).  Once you've run into a normal density a few times, you naturally start looking for it when you've got a negative quadratic term in an exponent. By the way, this "ignoring constants and pattern matching" trick is the same trick that Blitzstein uses to prove that the Beta distribution is the conjugate prior for the Binomial (in the lecture I link in the previous footnote).  Because we know that the posterior has to be a probability density, once we've figured out what flavor of density it is, we can back into the appropriate scaling constants by just looking up the right formulas in a stats book.
+
+[^3]: Why take the log here?  It's quite common in statistics to log densities, for example, when performing maximum likelihood estimation.  (MLE calculations become much simpler when you exploit $log(a*b) = log(a) + log(b)$, since taking derivatives of sums is a lot easier than taking derivatives of products.)  So it's not as weird to convince approximating the log density as it may seem at first.
 
 To summarize, if we can find the posterior mode and the second derivative of the log posterior density, then we can use those values to construct a normal approximation to the true posterior density near the posterior mode.  
 
